@@ -62,13 +62,14 @@ function App() {
   }, [])
 
   const menuItems = [
-    { id: 'home', label: 'Home' },
-    { id: 'about', label: 'About' },
-    { id: 'background', label: 'Background' },
-    { id: 'work', label: 'Work History' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'contact', label: 'Contact' }
-  ]
+  { id: 'home', label: 'Home' },
+  { id: 'about', label: 'About' },
+  { id: 'background', label: 'Background' },
+  { id: 'work', label: 'Work History' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'analyzer', label: 'Security Analyzer' },
+  { id: 'contact', label: 'Contact' }
+]
 
   const workHistory = [
     {
