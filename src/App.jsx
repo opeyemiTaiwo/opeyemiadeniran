@@ -42,7 +42,7 @@ function App() {
   // Update active section on scroll
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'about', 'background', 'work', 'projects', 'contact']
+      const sections = ['home', 'about', 'background', 'work', 'projects', 'analyzer', 'contact']
       const scrollPosition = window.scrollY + 150
 
       for (const sectionId of sections) {
@@ -62,14 +62,14 @@ function App() {
   }, [])
 
   const menuItems = [
-  { id: 'home', label: 'Home' },
-  { id: 'about', label: 'About' },
-  { id: 'background', label: 'Background' },
-  { id: 'work', label: 'Work History' },
-  { id: 'projects', label: 'Projects' },
-  { id: 'analyzer', label: 'Security Analyzer' },
-  { id: 'contact', label: 'Contact' }
-]
+    { id: 'home', label: 'Home' },
+    { id: 'about', label: 'About' },
+    { id: 'background', label: 'Background' },
+    { id: 'work', label: 'Work History' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'analyzer', label: 'Security Analyzer' },
+    { id: 'contact', label: 'Contact' }
+  ]
 
   const workHistory = [
     {
@@ -488,6 +488,13 @@ function App() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Security Analyzer Section */}
+      <section id="analyzer" className="section analyzer-section">
+        <div className="container">
+          <ModelPredictor />
         </div>
       </section>
 
