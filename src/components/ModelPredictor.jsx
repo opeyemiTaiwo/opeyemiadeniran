@@ -72,7 +72,7 @@ contract SafeBank {
   useEffect(() => {
     const initClient = async () => {
       try {
-        const gradioClient = await Client.connect("YOUR_USERNAME/YOUR_SPACE_NAME");
+        const gradioClient = await Client.connect("opeyemi/smart-contract-security");
         setClient(gradioClient);
       } catch (err) {
         console.error("Failed to connect to Gradio:", err);
