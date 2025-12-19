@@ -40,3 +40,23 @@
 .read-the-docs {
   color: #888;
 }
+/* Security Analyzer Section */
+.analyzer-section {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  padding: 5rem 0;
+}
+
+.analyzer-section .container {
+  max-width: 100%;
+  padding: 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .analyzer-section {
+    padding: 3rem 0;
+  }
+
+  .analyzer-section .container {
+    padding: 0 1rem;
+  }
+}
