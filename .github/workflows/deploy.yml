@@ -19,19 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-        
-      - name: Build
+      - name: Clean install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps --force
+          
+      - name: Build project
         run: npm run build
+        env:
+          NODE_ENV: production
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -42,4 +46,5 @@ jobs:
           path: './dist'
           
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
