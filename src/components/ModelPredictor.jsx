@@ -72,7 +72,7 @@ contract SafeBank {
   useEffect(() => {
     const initClient = async () => {
       try {
-        const app = await client("opeyemiTaiwo/smart-contract-security");
+        const app = await client("opethaiwoh/vun-smt");
         setGradioClient(app);
       } catch (err) {
         console.error("Failed to connect to Gradio:", err);
