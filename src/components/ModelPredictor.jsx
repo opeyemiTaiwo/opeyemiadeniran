@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Client } from '@gradio/client';
+import * as gradio from '@gradio/client';
 import './ModelPredictor.css';
 
 function ModelPredictor() {
