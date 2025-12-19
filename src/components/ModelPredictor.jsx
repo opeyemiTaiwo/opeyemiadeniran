@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { client } from '@gradio/client';
+import { Client } from '@gradio/client';
 import './ModelPredictor.css';
 
 function ModelPredictor() {
@@ -72,7 +72,7 @@ contract SafeBank {
   useEffect(() => {
     const initClient = async () => {
       try {
-        const app = await client("opethaiwoh/vun-smt");
+        const app = await Client.connect("opethaiwoh/vun-smt");
         setGradioClient(app);
       } catch (err) {
         console.error("Failed to connect to Gradio:", err);
@@ -130,10 +130,8 @@ contract SafeBank {
     return (
       <div className="result-content">
         {Object.entries(data).map(([key, value], index) => {
-          // Skip empty keys
           if (key.trim() === '') return null;
 
-          // Handle section headers (empty values)
           if (value === '') {
             return (
               <div key={index} className="result-section-header">
@@ -142,9 +140,7 @@ contract SafeBank {
             );
           }
 
-          // Determine styling based on key content
           const isRiskAssessment = key.includes('Risk Assessment');
-          const isProbability = key.includes('Probability') || key.includes('Confidence');
           const isWarning = key.includes('Critical') || key.includes('⚠️');
           const isSuccess = key.includes('✅') || key.includes('✓');
 
