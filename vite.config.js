@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
+  base: process.env.GITHUB_ACTIONS ? '/opeyemiadeniran/' : '/',
   plugins: [react()],
-  base: '/opeyemiadeniran/',  // ← ADD THIS LINE
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
+  }
 })
