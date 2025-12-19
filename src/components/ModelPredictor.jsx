@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import * as gradio from '@gradio/client';
+import { client } from '@gradio/client';
 import './ModelPredictor.css';
 
 function ModelPredictor() {
@@ -7,7 +7,7 @@ function ModelPredictor() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [client, setClient] = useState(null);
+  const [gradioClient, setGradioClient] = useState(null);
 
   // Sample contracts
   const SAMPLE_VULNERABLE = `pragma solidity ^0.8.0;
@@ -72,8 +72,8 @@ contract SafeBank {
   useEffect(() => {
     const initClient = async () => {
       try {
-        const gradioClient = await Client.connect("opeyemi/smart-contract-security");
-        setClient(gradioClient);
+        const app = await client("opeyemiTaiwo/smart-contract-security");
+        setGradioClient(app);
       } catch (err) {
         console.error("Failed to connect to Gradio:", err);
         setError("Failed to connect to AI model. Please try again later.");
@@ -88,7 +88,7 @@ contract SafeBank {
       return;
     }
 
-    if (!client) {
+    if (!gradioClient) {
       setError("AI model not connected. Please refresh the page.");
       return;
     }
@@ -98,7 +98,7 @@ contract SafeBank {
     setResult(null);
 
     try {
-      const response = await client.predict("/predict", {
+      const response = await gradioClient.predict("/predict", {
         source_code: sourceCode
       });
 
