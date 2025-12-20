@@ -99,8 +99,9 @@ contract SafeBank {
     setResult(null);
 
     try {
-      // Call the predict endpoint with positional argument (the way Gradio expects it)
-      const response = await client.predict("/predict", [sourceCode]);
+      // Try using index 0 (the first endpoint) instead of name
+      // In Gradio Blocks, the first button.click creates endpoint at index 0
+      const response = await client.predict(0, [sourceCode]);
 
       console.log("Response:", response); // Debug log
 
@@ -112,16 +113,14 @@ contract SafeBank {
     } catch (err) {
       console.error("Full error:", err);
       
-      // Check if it's a connection/startup error
       const errorMsg = err.message || err.toString();
       
-      if (errorMsg.includes('starting') || 
-          errorMsg.includes('Building') ||
-          errorMsg.includes('STARTING') ||
-          errorMsg.includes('loading')) {
-        setError("The AI model is starting up. Please wait 30-60 seconds and try again.");
+      if (errorMsg.includes('timeout') || errorMsg.includes('taking too long')) {
+        setError("The request timed out. Please try again.");
+      } else if (errorMsg.includes('endpoint') || errorMsg.includes('fn_index')) {
+        setError("API endpoint error. Please refresh the page and try again.");
       } else {
-        setError(`Analysis failed: ${errorMsg}. Please refresh the page and try again.`);
+        setError(`Analysis failed: ${errorMsg}. Please try again.`);
       }
     } finally {
       setLoading(false);
