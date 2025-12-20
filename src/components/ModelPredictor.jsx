@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Client } from '@gradio/client';
 import './ModelPredictor.css';
 
 function ModelPredictor() {
@@ -6,6 +7,22 @@ function ModelPredictor() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [client, setClient] = useState(null);
+
+  // Initialize Gradio client
+  useEffect(() => {
+    const initClient = async () => {
+      try {
+        const gradioClient = await Client.connect("opethaiwoh/vun-smt");
+        setClient(gradioClient);
+        console.log("Gradio client connected successfully");
+      } catch (err) {
+        console.error("Failed to connect to Gradio:", err);
+        setError("Failed to connect to AI model. Please refresh the page.");
+      }
+    };
+    initClient();
+  }, []);
 
   // Sample contracts (matching your Gradio app)
   const SAMPLE_VULNERABLE = `pragma solidity ^0.8.0;
@@ -72,50 +89,39 @@ contract SafeBank {
       return;
     }
 
+    if (!client) {
+      setError("AI model not connected. Please refresh the page.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      // For Gradio 6.x, use the /run/predict endpoint for direct API calls
-      const response = await fetch('https://opethaiwoh-vun-smt.hf.space/run/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: [sourceCode]
-        })
-      });
+      // Call the predict endpoint with positional argument (the way Gradio expects it)
+      const response = await client.predict("/predict", [sourceCode]);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log("Response:", response); // Debug log
 
-      const data = await response.json();
-      
-      // Gradio 6.x /run/ endpoint returns {data: [result]}
-      if (data.data && data.data.length > 0) {
-        setResult(data.data[0]);
-      } else if (data.error) {
-        throw new Error(data.error);
+      if (response && response.data && response.data.length > 0) {
+        setResult(response.data[0]);
       } else {
-        throw new Error('Unexpected response format from server');
+        throw new Error('No results returned from the model');
       }
     } catch (err) {
-      console.error("Analysis failed:", err);
+      console.error("Full error:", err);
       
-      // Provide helpful error messages
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setError("Unable to connect to the AI model. Please check your internet connection or try again later.");
-      } else if (err.message.includes('401') || err.message.includes('403')) {
-        setError("Authentication error. The model may be temporarily unavailable.");
-      } else if (err.message.includes('405')) {
-        setError("The AI model is starting up. Please wait 30 seconds and try again.");
-      } else if (err.message.includes('500') || err.message.includes('503')) {
-        setError("The AI model is currently loading or restarting. Please wait a moment and try again.");
+      // Check if it's a connection/startup error
+      const errorMsg = err.message || err.toString();
+      
+      if (errorMsg.includes('starting') || 
+          errorMsg.includes('Building') ||
+          errorMsg.includes('STARTING') ||
+          errorMsg.includes('loading')) {
+        setError("The AI model is starting up. Please wait 30-60 seconds and try again.");
       } else {
-        setError(`Analysis failed: ${err.message}. Please try again.`);
+        setError(`Analysis failed: ${errorMsg}. Please refresh the page and try again.`);
       }
     } finally {
       setLoading(false);
