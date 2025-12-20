@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Client } from '@gradio/client';
+import { useState } from 'react';
 import './ModelPredictor.css';
 
 function ModelPredictor() {
@@ -7,7 +6,6 @@ function ModelPredictor() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [gradioClient, setGradioClient] = useState(null);
 
   // Sample contracts
   const SAMPLE_VULNERABLE = `pragma solidity ^0.8.0;
@@ -68,28 +66,9 @@ contract SafeBank {
     }
 }`;
 
-  // Initialize Gradio client
-  useEffect(() => {
-    const initClient = async () => {
-      try {
-        const app = await Client.connect("opethaiwoh/vun-smt");
-        setGradioClient(app);
-      } catch (err) {
-        console.error("Failed to connect to Gradio:", err);
-        setError("Failed to connect to AI model. Please try again later.");
-      }
-    };
-    initClient();
-  }, []);
-
   const analyzeContract = async () => {
     if (!sourceCode.trim()) {
       setError("Please enter Solidity source code to analyze");
-      return;
-    }
-
-    if (!gradioClient) {
-      setError("AI model not connected. Please refresh the page.");
       return;
     }
 
@@ -98,14 +77,40 @@ contract SafeBank {
     setResult(null);
 
     try {
-      const response = await gradioClient.predict("/predict", {
-        source_code: sourceCode
+      // Direct API call to Hugging Face Space
+      const response = await fetch('https://opethaiwoh-vun-smt.hf.space/api/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: [sourceCode]
+        })
       });
 
-      setResult(response.data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Gradio returns data in data array
+      if (data.data && data.data.length > 0) {
+        setResult(data.data[0]);
+      } else {
+        throw new Error('Unexpected response format');
+      }
     } catch (err) {
       console.error("Analysis failed:", err);
-      setError("Analysis failed. Please check your contract code and try again.");
+      
+      // Provide helpful error messages
+      if (err.message.includes('Failed to fetch')) {
+        setError("Unable to connect to the AI model. Please check your internet connection or try again later.");
+      } else if (err.message.includes('401') || err.message.includes('403')) {
+        setError("Authentication error. The model may be temporarily unavailable.");
+      } else {
+        setError("Analysis failed. The AI model may be loading or temporarily unavailable. Please try again in a moment.");
+      }
     } finally {
       setLoading(false);
     }
