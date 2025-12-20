@@ -77,14 +77,14 @@ contract SafeBank {
     setResult(null);
 
     try {
-      // Call Gradio API endpoint
-      const response = await fetch('https://opethaiwoh-vun-smt.hf.space/api/predict', {
+      // For Gradio 6.x, use the /run/predict endpoint for direct API calls
+      const response = await fetch('https://opethaiwoh-vun-smt.hf.space/run/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          data: [sourceCode]  // Gradio expects data array with source code as first parameter
+          data: [sourceCode]
         })
       });
 
@@ -94,7 +94,7 @@ contract SafeBank {
 
       const data = await response.json();
       
-      // Gradio 6.x returns data in this format: {data: [result]}
+      // Gradio 6.x /run/ endpoint returns {data: [result]}
       if (data.data && data.data.length > 0) {
         setResult(data.data[0]);
       } else if (data.error) {
@@ -110,10 +110,12 @@ contract SafeBank {
         setError("Unable to connect to the AI model. Please check your internet connection or try again later.");
       } else if (err.message.includes('401') || err.message.includes('403')) {
         setError("Authentication error. The model may be temporarily unavailable.");
+      } else if (err.message.includes('405')) {
+        setError("The AI model is starting up. Please wait 30 seconds and try again.");
       } else if (err.message.includes('500') || err.message.includes('503')) {
         setError("The AI model is currently loading or restarting. Please wait a moment and try again.");
       } else {
-        setError(`Analysis failed: ${err.message}. The AI model may be temporarily unavailable.`);
+        setError(`Analysis failed: ${err.message}. Please try again.`);
       }
     } finally {
       setLoading(false);
