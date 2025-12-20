@@ -7,7 +7,7 @@ function ModelPredictor() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Sample contracts
+  // Sample contracts (matching your Gradio app)
   const SAMPLE_VULNERABLE = `pragma solidity ^0.8.0;
 
 contract VulnerableBank {
@@ -77,14 +77,14 @@ contract SafeBank {
     setResult(null);
 
     try {
-      // Direct API call to Hugging Face Space
+      // Call Gradio API endpoint
       const response = await fetch('https://opethaiwoh-vun-smt.hf.space/api/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          data: [sourceCode]
+          data: [sourceCode]  // Gradio expects data array with source code as first parameter
         })
       });
 
@@ -94,22 +94,26 @@ contract SafeBank {
 
       const data = await response.json();
       
-      // Gradio returns data in data array
+      // Gradio 6.x returns data in this format: {data: [result]}
       if (data.data && data.data.length > 0) {
         setResult(data.data[0]);
+      } else if (data.error) {
+        throw new Error(data.error);
       } else {
-        throw new Error('Unexpected response format');
+        throw new Error('Unexpected response format from server');
       }
     } catch (err) {
       console.error("Analysis failed:", err);
       
       // Provide helpful error messages
-      if (err.message.includes('Failed to fetch')) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
         setError("Unable to connect to the AI model. Please check your internet connection or try again later.");
       } else if (err.message.includes('401') || err.message.includes('403')) {
         setError("Authentication error. The model may be temporarily unavailable.");
+      } else if (err.message.includes('500') || err.message.includes('503')) {
+        setError("The AI model is currently loading or restarting. Please wait a moment and try again.");
       } else {
-        setError("Analysis failed. The AI model may be loading or temporarily unavailable. Please try again in a moment.");
+        setError(`Analysis failed: ${err.message}. The AI model may be temporarily unavailable.`);
       }
     } finally {
       setLoading(false);
@@ -132,11 +136,33 @@ contract SafeBank {
   const formatResult = (data) => {
     if (!data) return null;
 
+    // Handle error responses from the API
+    if (data["❌ Error"] || data["⚠️ Error"] || data["❌ Analysis Failed"]) {
+      return (
+        <div className="result-content error-result">
+          <div className="result-item error">
+            <span className="result-key">Error:</span>
+            <span className="result-value">{data["❌ Error"] || data["⚠️ Error"] || data["❌ Analysis Failed"]}</span>
+          </div>
+          {data["Help"] && (
+            <div className="result-item">
+              <span className="result-key">Help:</span>
+              <span className="result-value">{data["Help"]}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="result-content">
         {Object.entries(data).map(([key, value], index) => {
-          if (key.trim() === '') return null;
+          // Skip empty keys used for spacing
+          if (key.trim() === '' || key.trim() === ' ' || key.trim() === '  ') {
+            return <div key={index} className="result-spacer"></div>;
+          }
 
+          // Handle section headers (empty values)
           if (value === '') {
             return (
               <div key={index} className="result-section-header">
@@ -145,14 +171,19 @@ contract SafeBank {
             );
           }
 
+          // Determine styling based on content
           const isRiskAssessment = key.includes('Risk Assessment');
-          const isWarning = key.includes('Critical') || key.includes('⚠️');
-          const isSuccess = key.includes('✅') || key.includes('✓');
+          const isHighRisk = value.includes('HIGH RISK') || value.includes('🔴');
+          const isMediumRisk = value.includes('MEDIUM RISK') || value.includes('🟡');
+          const isLowRisk = value.includes('LOW RISK') || value.includes('🟢');
+          const isWarning = key.includes('Critical') || value.includes('⚠️') || isHighRisk || isMediumRisk;
+          const isSuccess = value.includes('✅') || value.includes('✓') || isLowRisk;
+          const isProbability = key.includes('Probability') || key.includes('Confidence');
 
           return (
             <div 
               key={index} 
-              className={`result-item ${isRiskAssessment ? 'risk-assessment' : ''} ${isWarning ? 'warning' : ''} ${isSuccess ? 'success' : ''}`}
+              className={`result-item ${isRiskAssessment ? 'risk-assessment' : ''} ${isWarning ? 'warning' : ''} ${isSuccess ? 'success' : ''} ${isProbability ? 'probability' : ''}`}
             >
               <span className="result-key">{key}:</span>
               <span className="result-value">{value}</span>
@@ -246,6 +277,7 @@ contract SafeBank {
               <div className="error-state">
                 <span className="error-icon">⚠️</span>
                 <p>{error}</p>
+                <small>If the problem persists, the Hugging Face Space may be restarting. Please wait a moment.</small>
               </div>
             )}
 
